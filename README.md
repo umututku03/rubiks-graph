@@ -4,6 +4,10 @@ An exact 2x2 Rubik's Cube solver built around the cube's state graph. Each legal
 
 The 2x2 cube has 3,674,160 reachable states, making exact graph search practical. The same direct search is not practical for the 3x3 cube, whose state graph has roughly 4.3 x 10^19 vertices.
 
+## Motivation
+
+This project was inspired by [this Twitter post](https://x.com/TheMathFlow/status/2101154346583154801). I built it to revisit graph theory through modern C++.
+
 ## Build
 
 ```sh
