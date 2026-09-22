@@ -1,6 +1,6 @@
 # Rubik's Cube Graph Solver
 
-An exact 2x2 Rubik's Cube solver built around the cube's state graph. Each legal cube configuration is a vertex, each face turn is an edge, and bidirectional breadth-first search finds a shortest path to the solved state.
+An exact 2x2 Rubik's Cube solver in C++ using bidirectional graph search. Each legal cube configuration is a vertex, each face turn is an edge, and bidirectional breadth-first search finds a shortest path to the solved state.
 
 The 2x2 cube has 3,674,160 reachable states, making exact breadth-first search practical. The 3x3 is also solved through graph search, but its roughly 4.3 x 10^19-state graph requires heuristics and pruning instead of exhaustive breadth-first search. Every legal 3x3 position can be solved in at most 20 face turns.
 
