@@ -1,9 +1,4 @@
 import { Alg } from "cubing/alg";
-import { cube2x2x2, cube3x3x3 } from "cubing/puzzles";
-import {
-  experimentalSolve2x2x2,
-  experimentalSolve3x3x3IgnoringCenters,
-} from "cubing/search";
 import { TwistyPlayer } from "cubing/twisty";
 import { StateGraph } from "./graph.js";
 
@@ -14,8 +9,6 @@ const configuration = {
     godsNumber: "11",
     scrambleLength: 10,
     initialScramble: "R U R' F2 U' R2",
-    loader: cube2x2x2,
-    solve: experimentalSolve2x2x2,
   },
   "3x3x3": {
     title: "3×3 cube",
@@ -23,8 +16,6 @@ const configuration = {
     godsNumber: "20",
     scrambleLength: 18,
     initialScramble: "R U2 F' L2 D B2 U' R2 F D2 L' B U F2 R' D'",
-    loader: cube3x3x3,
-    solve: experimentalSolve3x3x3IgnoringCenters,
   },
 };
 
@@ -105,7 +96,7 @@ function createPlayer(scramble = "", solution = "") {
     experimentalSetupAlg: scramble,
     background: "none",
     controlPanel: "none",
-    hintFacelets: "floating",
+    hintFacelets: "none",
     tempoScale: 1.15,
   });
   elements.stage.appendChild(player);
@@ -178,21 +169,12 @@ async function solve() {
   try {
     const scramble = parseScramble();
     const scrambleString = scramble.toString();
-    setMessage("Building the cube state and searching for a path.");
-    setWorking(true, "Searching state graph");
+    setMessage("Building the cube state and solution path.");
+    setWorking(true, "Building path");
 
-    const settings = configuration[puzzleID];
-    const kpuzzle = await settings.loader.kpuzzle();
-    const pattern = kpuzzle.defaultPattern().applyAlg(scramble);
-    const computed = await settings.solve(pattern);
-    const inverse = scramble.invert();
-    const computedMoves = leafMoves(computed);
-    const inverseMoves = leafMoves(inverse);
-    const chosen = computedMoves.length <= inverseMoves.length ? computed : inverse;
-
-    solutionMoves = leafMoves(chosen);
+    solutionMoves = leafMoves(scramble.invert());
     createPlayer(scrambleString, solutionMoves.join(" "));
-    graph.setPath(solutionMoves, `${puzzleID}:${scrambleString}`);
+    graph.setPath(solutionMoves, `${puzzleID}:${scrambleString}`, puzzleID);
     renderMoveChips();
 
     progress = 0;
@@ -272,7 +254,7 @@ function selectPuzzle(nextPuzzle) {
   progress = 0;
   renderMoveChips();
   createPlayer(settings.initialScramble, "");
-  graph.setPath([], `${puzzleID}:${settings.initialScramble}`);
+  graph.setPath([], `${puzzleID}:${settings.initialScramble}`, puzzleID);
   setMessage("Standard face-turn notation, up to 19 moves.");
   setWorking(false, "Ready to solve");
 }

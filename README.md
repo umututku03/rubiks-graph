@@ -2,7 +2,7 @@
 
 An exact 2x2 Rubik's Cube solver built around the cube's state graph. Each legal cube configuration is a vertex, each face turn is an edge, and bidirectional breadth-first search finds a shortest path to the solved state.
 
-The 2x2 cube has 3,674,160 reachable states, making exact graph search practical. The same direct search is not practical for the 3x3 cube, whose state graph has roughly 4.3 x 10^19 vertices.
+The 2x2 cube has 3,674,160 reachable states, making exact breadth-first search practical. The 3x3 is also solved through graph search, but its roughly 4.3 x 10^19-state graph requires heuristics and pruning instead of exhaustive breadth-first search. Every legal 3x3 position can be solved in at most 20 face turns.
 
 ## Motivation
 
@@ -11,6 +11,8 @@ This project was inspired by [this Twitter post](https://x.com/TheMathFlow/statu
 ## Interactive visualization
 
 The [web visualization](https://umututku03.github.io/rubiks-graph/) includes animated 2x2 and 3x3 cubes, a state graph, generated scrambles, solution playback, and graph metrics. Displayed scrambles are limited to 19 face turns so every visualized solution remains below 20 moves.
+
+The website and data visualization were built with help from Codex.
 
 ```sh
 npm install

@@ -1,13 +1,6 @@
-const palette = {
-  background: "#0d100e",
-  line: "#2d332e",
-  faint: "#333934",
-  start: "#ff8a45",
-  path: "#57d8e4",
-  goal: "#a5f03b",
-  inactive: "#4d534e",
-  text: "#d8ddd7",
-};
+const colors = ["#ef4b35", "#f3982e", "#f6bd42", "#2f7458", "#285ba7", "#f9f8f1"];
+const outline = "#383936";
+const guide = "#aaa8a0";
 
 function hashText(value) {
   let hash = 2166136261;
@@ -28,15 +21,24 @@ function randomGenerator(seed) {
   };
 }
 
+function shuffled(values, random) {
+  const result = [...values];
+  for (let index = result.length - 1; index > 0; --index) {
+    const target = Math.floor(random() * (index + 1));
+    [result[index], result[target]] = [result[target], result[index]];
+  }
+  return result;
+}
+
 export class StateGraph {
   constructor(canvas) {
     this.canvas = canvas;
     this.context = canvas.getContext("2d");
     this.nodes = [];
-    this.edges = [];
-    this.pathLength = 0;
     this.progress = 0;
-    this.frame = 0;
+    this.displayProgress = 0;
+    this.pathLength = 0;
+    this.puzzleID = "2x2x2";
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
@@ -54,25 +56,31 @@ export class StateGraph {
     this.draw();
   }
 
-  setPath(moves, seedText) {
+  setPath(moves, seedText, puzzleID = "2x2x2") {
     this.pathLength = moves.length;
     this.progress = 0;
+    this.displayProgress = 0;
     this.seed = hashText(seedText);
+    this.puzzleID = puzzleID;
     this.layout();
-    this.revealStartedAt = performance.now();
-    cancelAnimationFrame(this.frame);
-    const animate = () => {
-      this.draw();
-      if (performance.now() - this.revealStartedAt < 850) {
-        this.frame = requestAnimationFrame(animate);
-      }
-    };
-    animate();
+    this.draw();
   }
 
   setProgress(progress) {
     this.progress = Math.max(0, Math.min(progress, this.pathLength));
-    this.draw();
+    cancelAnimationFrame(this.frame);
+    const animate = () => {
+      const distance = this.progress - this.displayProgress;
+      this.displayProgress += distance * 0.14;
+      if (Math.abs(distance) < 0.01) {
+        this.displayProgress = this.progress;
+      }
+      this.draw();
+      if (this.displayProgress !== this.progress) {
+        this.frame = requestAnimationFrame(animate);
+      }
+    };
+    animate();
   }
 
   layout() {
@@ -80,161 +88,94 @@ export class StateGraph {
       return;
     }
 
-    const random = randomGenerator(this.seed || 19);
-    const count = Math.max(this.pathLength + 1, 2);
-    const paddingX = Math.min(72, this.width * 0.1);
-    const centerY = this.height * 0.52;
-    const amplitude = Math.min(86, this.height * 0.19);
-    const pathNodes = [];
+    const random = randomGenerator(this.seed || 7);
+    const size = Math.min(this.width, this.height);
+    const centerX = this.width / 2;
+    const centerY = this.height / 2;
+    const clusterRadius = size * 0.235;
+    const perFace = this.puzzleID === "3x3x3" ? 9 : 4;
+    const dimension = Math.sqrt(perFace);
+    const gap = this.puzzleID === "3x3x3" ? size * 0.04 : size * 0.052;
+    const angles = [210, 30, 270, 150, 330, 90].map((degrees) => degrees * Math.PI / 180);
+    const goalSlots = [];
 
-    for (let index = 0; index < count; ++index) {
-      const fraction = index / (count - 1);
-      pathNodes.push({
-        x: paddingX + fraction * (this.width - paddingX * 2),
-        y: centerY + Math.sin(fraction * Math.PI * 2.25 - 0.6) * amplitude,
-        type: index === 0 ? "start" : index === count - 1 ? "goal" : "path",
-        depth: Math.min(index, this.pathLength),
-        label: index,
-      });
-    }
-
-    const nodes = [...pathNodes];
-    const edges = [];
-    for (let index = 0; index < pathNodes.length - 1; ++index) {
-      edges.push({ from: index, to: index + 1, path: true, depth: index + 1 });
-    }
-
-    pathNodes.forEach((parent, pathIndex) => {
-      const branchCount = this.pathLength ? 4 + Math.floor(random() * 5) : 7;
-      const baseAngle = Math.atan2(
-        parent.y - centerY,
-        parent.x - this.width / 2,
-      );
-
-      for (let branch = 0; branch < branchCount; ++branch) {
-        const direction = baseAngle + (random() - 0.5) * 2.8;
-        const distance = 32 + random() * 56;
-        const first = nodes.length;
-        nodes.push({
-          x: parent.x + Math.cos(direction) * distance,
-          y: parent.y + Math.sin(direction) * distance,
-          type: "neighbor",
-          depth: pathIndex,
+    for (let face = 0; face < 6; ++face) {
+      const clusterX = centerX + Math.cos(angles[face]) * clusterRadius;
+      const clusterY = centerY + Math.sin(angles[face]) * clusterRadius;
+      for (let index = 0; index < perFace; ++index) {
+        const column = index % dimension;
+        const row = Math.floor(index / dimension);
+        goalSlots.push({
+          face,
+          x: clusterX + (column - (dimension - 1) / 2) * gap,
+          y: clusterY + (row - (dimension - 1) / 2) * gap,
         });
-        edges.push({ from: pathIndex, to: first, path: false, depth: pathIndex });
-
-        if (random() > 0.52) {
-          const second = nodes.length;
-          const bend = direction + (random() - 0.5) * 0.85;
-          nodes.push({
-            x: nodes[first].x + Math.cos(bend) * (21 + random() * 28),
-            y: nodes[first].y + Math.sin(bend) * (21 + random() * 28),
-            type: "neighbor",
-            depth: pathIndex,
-          });
-          edges.push({ from: first, to: second, path: false, depth: pathIndex });
-        }
       }
-    });
+    }
 
-    this.nodes = nodes;
-    this.edges = edges;
+    const starts = shuffled(goalSlots.map((slot) => ({ x: slot.x, y: slot.y })), random);
+    this.nodes = goalSlots.map((goal, index) => ({
+      color: colors[goal.face],
+      startX: starts[index].x + (random() - 0.5) * gap * 0.7,
+      startY: starts[index].y + (random() - 0.5) * gap * 0.7,
+      goalX: goal.x,
+      goalY: goal.y,
+    }));
+    this.centerX = centerX;
+    this.centerY = centerY;
+    this.clusterRadius = clusterRadius;
+    this.guideRadius = size * 0.32;
+    this.angles = angles;
+    this.nodeRadius = this.puzzleID === "3x3x3" ? Math.max(6, size * 0.017) : Math.max(8, size * 0.024);
   }
 
   draw() {
-    const context = this.context;
-    if (!context || !this.width) {
+    if (!this.context || !this.width) {
       return;
     }
 
-    const reveal = this.revealStartedAt
-      ? Math.min(1, (performance.now() - this.revealStartedAt) / 700)
-      : 1;
+    const context = this.context;
+    const ratio = this.pathLength ? this.displayProgress / this.pathLength : 0;
+    const eased = ratio * ratio * (3 - 2 * ratio);
     context.clearRect(0, 0, this.width, this.height);
-    context.fillStyle = palette.background;
-    context.fillRect(0, 0, this.width, this.height);
 
-    context.save();
-    context.strokeStyle = "rgba(255,255,255,0.025)";
-    context.lineWidth = 1;
-    for (let x = 24; x < this.width; x += 36) {
+    context.lineWidth = 2;
+    this.angles.forEach((angle, index) => {
+      const circleX = this.centerX + Math.cos(angle) * this.clusterRadius * 0.63;
+      const circleY = this.centerY + Math.sin(angle) * this.clusterRadius * 0.63;
       context.beginPath();
-      context.moveTo(x, 0);
-      context.lineTo(x, this.height);
+      context.arc(circleX, circleY, this.guideRadius, 0, Math.PI * 2);
+      context.strokeStyle = index / 6 < eased ? outline : guide;
       context.stroke();
-    }
-    for (let y = 24; y < this.height; y += 36) {
-      context.beginPath();
-      context.moveTo(0, y);
-      context.lineTo(this.width, y);
-      context.stroke();
-    }
-    context.restore();
+    });
 
-    context.lineCap = "round";
-    for (const edge of this.edges) {
-      const from = this.nodes[edge.from];
-      const to = this.nodes[edge.to];
-      const active = edge.path && edge.depth <= this.progress;
+    if (this.nodes.length) {
+      const ordered = this.nodes.filter((_, index) => index % Math.max(1, Math.floor(this.nodes.length / 14)) === 0);
       context.beginPath();
-      context.moveTo(from.x, from.y);
-      context.lineTo(
-        from.x + (to.x - from.x) * reveal,
-        from.y + (to.y - from.y) * reveal,
-      );
-      context.strokeStyle = active ? palette.path : edge.path ? palette.line : "rgba(65,72,66,0.44)";
-      context.lineWidth = active ? 2.2 : edge.path ? 1.2 : 0.65;
+      ordered.forEach((node, index) => {
+        const x = node.startX + (node.goalX - node.startX) * eased;
+        const y = node.startY + (node.goalY - node.startY) * eased;
+        if (index === 0) {
+          context.moveTo(x, y);
+        } else {
+          context.lineTo(x, y);
+        }
+      });
+      context.strokeStyle = "rgba(56,57,54,0.28)";
+      context.lineWidth = 1.4;
       context.stroke();
     }
 
     for (const node of this.nodes) {
-      if (node.type === "neighbor") {
-        context.beginPath();
-        context.arc(node.x, node.y, 1.4 * reveal, 0, Math.PI * 2);
-        context.fillStyle = palette.inactive;
-        context.fill();
-        continue;
-      }
-
-      const active = node.type === "start" || node.depth <= this.progress;
-      const color = node.type === "start"
-        ? palette.start
-        : node.type === "goal"
-          ? palette.goal
-          : active
-            ? palette.path
-            : palette.inactive;
-      const radius = node.type === "start" || node.type === "goal" ? 7 : 4.5;
-
-      if (active) {
-        const glow = context.createRadialGradient(node.x, node.y, 0, node.x, node.y, 18);
-        glow.addColorStop(0, `${color}55`);
-        glow.addColorStop(1, `${color}00`);
-        context.beginPath();
-        context.arc(node.x, node.y, 18, 0, Math.PI * 2);
-        context.fillStyle = glow;
-        context.fill();
-      }
-
+      const x = node.startX + (node.goalX - node.startX) * eased;
+      const y = node.startY + (node.goalY - node.startY) * eased;
       context.beginPath();
-      context.arc(node.x, node.y, radius * reveal, 0, Math.PI * 2);
-      context.fillStyle = color;
+      context.arc(x, y, this.nodeRadius, 0, Math.PI * 2);
+      context.fillStyle = node.color;
       context.fill();
-      context.strokeStyle = palette.background;
+      context.strokeStyle = outline;
       context.lineWidth = 2;
       context.stroke();
-    }
-
-    const current = this.nodes[Math.min(this.progress, this.pathLength)];
-    if (current) {
-      context.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
-      context.fillStyle = palette.text;
-      context.textAlign = "center";
-      context.fillText(
-        this.progress === this.pathLength && this.pathLength > 0 ? "SOLVED" : `d = ${this.progress}`,
-        current.x,
-        current.y - 18,
-      );
     }
   }
 }
