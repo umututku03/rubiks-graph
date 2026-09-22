@@ -8,7 +8,16 @@ The 2x2 cube has 3,674,160 reachable states, making exact graph search practical
 
 This project was inspired by [this Twitter post](https://x.com/TheMathFlow/status/2101154346583154801). I built it to revisit graph theory through modern C++.
 
-## Build
+## Interactive visualization
+
+The [web visualization](https://umututku03.github.io/rubiks-graph/) includes animated 2x2 and 3x3 cubes, a state graph, generated scrambles, solution playback, and graph metrics. Displayed scrambles are limited to 19 face turns so every visualized solution remains below 20 moves.
+
+```sh
+npm install
+npm run dev
+```
+
+## Build the C++ solver
 
 ```sh
 cmake -S . -B build

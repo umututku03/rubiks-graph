@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Explore Rubik's Cube solutions as paths through a graph of cube states." />
+    <title>Rubik's Graph Lab</title>
+    <link rel="stylesheet" href="/web/styles.css" />
+  </head>
+  <body>
+    <main>
+      <header class="site-header">
+        <a class="brand" href="#top" aria-label="Rubik's Graph Lab home">
+          <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <span>Rubik's Graph Lab</span>
+        </a>
+        <a class="source-link" href="https://github.com/umututku03/rubiks-graph">View source <span>↗</span></a>
+      </header>
+
+      <section class="hero" id="top">
+        <p class="eyebrow">Graph theory, made tangible</p>
+        <h1>Every state is a node.<br /><span>Every turn is an edge.</span></h1>
+        <p class="hero-copy">Watch a Rubik's Cube solution emerge as a path through an enormous graph of possible configurations.</p>
+      </section>
+
+      <section class="workspace" aria-label="Cube solver and graph visualization">
+        <div class="workspace-bar">
+          <div class="puzzle-switcher" role="group" aria-label="Cube size">
+            <button class="puzzle-option active" data-puzzle="2x2x2" type="button">2×2 cube</button>
+            <button class="puzzle-option" data-puzzle="3x3x3" type="button">3×3 cube</button>
+          </div>
+          <div class="status"><span></span><span id="status-text">Ready to solve</span></div>
+        </div>
+
+        <div class="visual-grid">
+          <article class="panel cube-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">Physical view</p>
+                <h2 id="cube-title">2×2 cube</h2>
+              </div>
+              <span class="move-counter"><strong id="current-move">0</strong> / <span id="total-moves">0</span> moves</span>
+            </div>
+            <div class="cube-stage" id="cube-stage"></div>
+            <div class="playback">
+              <button class="icon-button" id="reset-button" type="button" aria-label="Return to the scrambled state">↺</button>
+              <button class="icon-button" id="previous-button" type="button" aria-label="Previous move">←</button>
+              <button class="play-button" id="play-button" type="button" aria-label="Play solution"><span></span></button>
+              <button class="icon-button" id="next-button" type="button" aria-label="Next move">→</button>
+              <input id="timeline" type="range" min="0" max="0" value="0" aria-label="Solution progress" />
+            </div>
+          </article>
+
+          <article class="panel graph-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="panel-label">State graph</p>
+                <h2>Search path</h2>
+              </div>
+              <div class="graph-legend" aria-label="Graph legend">
+                <span><i class="start-node"></i>Start</span>
+                <span><i class="path-node"></i>Path</span>
+                <span><i class="goal-node"></i>Solved</span>
+              </div>
+            </div>
+            <div class="graph-wrap">
+              <canvas id="graph-canvas"></canvas>
+              <div class="graph-depth"><span>depth</span><strong id="graph-depth">0</strong></div>
+            </div>
+          </article>
+        </div>
+
+        <div class="control-grid">
+          <div class="scramble-control">
+            <label for="scramble-input">Scramble</label>
+            <div class="input-row">
+              <input id="scramble-input" value="R U R' F2 U' R2" autocomplete="off" spellcheck="false" />
+              <button id="random-button" type="button">New scramble</button>
+              <button class="solve-button" id="solve-button" type="button">Find path</button>
+            </div>
+            <p id="input-message">Standard face-turn notation, up to 19 moves.</p>
+          </div>
+          <div class="solution-control">
+            <span>Shortest known path</span>
+            <div class="moves" id="solution-moves"><span class="empty-move">Run the solver to reveal the path</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics" aria-label="Graph statistics">
+        <article>
+          <p>Reachable states</p>
+          <strong id="state-count">3,674,160</strong>
+          <span>vertices in the graph</span>
+        </article>
+        <article>
+          <p>Moves from each state</p>
+          <strong>18</strong>
+          <span>maximum outgoing edges</span>
+        </article>
+        <article>
+          <p>God's number</p>
+          <strong id="gods-number">11</strong>
+          <span>maximum optimal distance</span>
+        </article>
+        <article>
+          <p>Path displayed</p>
+          <strong id="path-length">—</strong>
+          <span id="path-caption">waiting for a solution</span>
+        </article>
+      </section>
+
+      <section class="explanation">
+        <div>
+          <p class="eyebrow">The model</p>
+          <h2>A puzzle becomes a graph.</h2>
+        </div>
+        <div class="explanation-copy">
+          <p>A cube configuration can be encoded as a vertex. Applying any legal face turn creates a neighboring vertex, connected by an edge. Solving the cube means finding a path from the scrambled vertex to the solved one.</p>
+          <p>The highlighted nodes are the computed solution states. The dim branches show a representative sample of other legal moves available at each step, making the size and branching structure of the search space visible.</p>
+        </div>
+      </section>
+
+      <footer>
+        <span>Built to revisit graph theory through modern C++.</span>
+        <a href="https://x.com/TheMathFlow/status/2101154346583154801">Inspired by The Math Flow ↗</a>
+      </footer>
+    </main>
+    <script type="module" src="/web/main.js"></script>
+  </body>
+</html>
+
